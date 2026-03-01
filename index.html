@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Distrimedia Tools Portal</title>
+<style>
+body{margin:0;background:#0b0f0c;color:#e9f3ec;font-family:Arial, sans-serif;}
+header{background:#111a14;padding:14px;font-size:18px;font-weight:bold;border-bottom:1px solid #23352b;}
+.container{padding:14px;display:grid;gap:14px;}
+.card{background:#111a14;border:1px solid #23352b;border-radius:10px;padding:14px;}
+h2{margin:0 0 10px 0;font-size:15px;}
+input,select,button{padding:8px;font-size:14px;border-radius:6px;border:1px solid #23352b;background:#0e1410;color:#e9f3ec;}
+button{cursor:pointer;}
+.row{display:flex;gap:8px;flex-wrap:wrap;}
+.small{font-size:12px;color:#a7b7ad;margin-top:8px;}
+.ok{color:#35d07f;}
+.warn{color:#ffcc66;}
+.bad{color:#ff6b6b;}
+</style>
+</head>
+<body>
+
+<header>DISTRIMEDIA TOOLS PORTAL</header>
+
+<div class="container">
+
+<!-- TRACKING HUB -->
+<div class="card">
+<h2>📦 Tracking Hub</h2>
+<div class="row">
+<select id="carrier">
+<option value="auto">Auto (17TRACK)</option>
+<option value="dpd">DPD</option>
+<option value="dhl">DHL</option>
+</select>
+<input id="tracknr" type="text" placeholder="Trackingnummer"/>
+<button onclick="track()">Track</button>
+</div>
+<div class="small">Palletnetwerken vereisen vaak login (Dachser, Qargo, DSV).</div>
+</div>
+
+<!-- INCOTERM TOOL -->
+<div class="card">
+<h2>🌍 Incoterm Quick Tool</h2>
+<div class="row">
+<select id="country">
+<option value="BE">BE</option>
+<option value="NL">NL</option>
+<option value="LU">LU</option>
+<option value="FR">FR</option>
+<option value="DE">DE</option>
+<option value="GB">GB</option>
+<option value="NO">NO</option>
+<option value="CH">CH</option>
+<option value="OTHER">Other</option>
+</select>
+<input id="pallets" type="number" value="1" min="1"/>
+<button onclick="incoterm()">Check</button>
+</div>
+<div id="incotermResult" class="small"></div>
+</div>
+
+<!-- PALLET HEIGHT CHECK -->
+<div class="card">
+<h2>📏 Pallet Height Check</h2>
+<div class="row">
+<input id="height" type="number" placeholder="Hoogte incl. pallet (cm)"/>
+<button onclick="heightCheck()">Check</button>
+</div>
+<div id="heightResult" class="small"></div>
+</div>
+
+<!-- CUT OFF TIMER -->
+<div class="card">
+<h2>⏱ Cut-off Timer (16:30)</h2>
+<div id="timer" class="small"></div>
+</div>
+
+</div>
+
+<script>
+
+// TRACKING
+function track(){
+let nr=document.getElementById("tracknr").value.trim();
+if(!nr) return;
+let carrier=document.getElementById("carrier").value;
+let url;
+if(carrier==="dpd"){
+url="https://www.dpd.com/be/nl/ontvangen/track-trace/?parcelNumber="+nr;
+}
+else if(carrier==="dhl"){
+url="https://www.dhl.com/global-en/home/tracking.html?tracking-id="+nr;
+}
+else{
+url="https://www.17track.net/en/tracking?nums="+nr;
+}
+window.open(url,"_blank");
+}
+
+// INCOTERM
+function incoterm(){
+let country=document.getElementById("country").value;
+let pallets=parseInt(document.getElementById("pallets").value);
+let result="";
+if(["BE","NL","LU"].includes(country)){
+if(pallets>5){
+result="Carrier: Qargo (BENELUX >5 pallets) | Incoterm: DAP";
+}else{
+result="Carrier: GLPAL (≤5 pallets) | Incoterm: DAP";
+}
+}
+else if(["GB","NO","CH"].includes(country)){
+result="Carrier: Dachser | Incoterm: DAP | Pro forma vereist";
+}
+else{
+result="Carrier: Dachser/TOM | Incoterm: DAP";
+}
+document.getElementById("incotermResult").innerHTML=result;
+}
+
+// HEIGHT CHECK
+function heightCheck(){
+let h=parseInt(document.getElementById("height").value);
+let result="";
+if(h>200){
+result="<span class='bad'>TE HOOG – Max 200cm</span>";
+}
+else if(h===200){
+result="<span class='warn'>Randgeval – Meet correct</span>";
+}
+else{
+result="<span class='ok'>OK</span>";
+}
+document.getElementById("heightResult").innerHTML=result;
+}
+
+// TIMER
+function updateTimer(){
+let now=new Date();
+let cutoff=new Date();
+cutoff.setHours(16,30,0,0);
+if(now>cutoff){
+document.getElementById("timer").innerHTML="<span class='bad'>Cut-off verstreken</span>";
+return;
+}
+let diff=cutoff-now;
+let h=Math.floor(diff/1000/60/60);
+let m=Math.floor(diff/1000/60)%60;
+let s=Math.floor(diff/1000)%60;
+document.getElementById("timer").innerHTML="Nog "+h+"u "+m+"m "+s+"s";
+}
+setInterval(updateTimer,1000);
+updateTimer();
+
+</script>
+
+</body>
+</html>
